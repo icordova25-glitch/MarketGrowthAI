@@ -5,6 +5,8 @@ import { mockGrowthScore, mockWebsiteData, mockSocialData } from "@/lib/mock-dat
 import { ScoreRing, SectionHeader } from "@/components/ui";
 import { ArrowUpRight, BrainCircuit, Lightbulb, Sparkles } from "lucide-react";
 import { calculateAdaptiveGrowthScore, type GrowthScoreDimension } from "@/lib/growth-score";
+import { getBusinessAnalysis } from "@/lib/business-analysis";
+import { MarketingCoach } from "@/components/MarketingCoach";
 
 const defaultChannels = ["Website", "Google Business Profile", "Instagram", "LinkedIn"];
 
@@ -99,6 +101,7 @@ export default function AIEnginePage() {
   }, []);
 
   const adaptiveScore = calculateAdaptiveGrowthScore(buildScoreDimensions(activeChannels), activeChannels);
+  const analysis = getBusinessAnalysis(activeChannels);
   const strongestSocialChannel = [
     { name: "Instagram", score: mockSocialData.instagram.score, engagement: mockSocialData.instagram.engagementRate },
     { name: "Facebook", score: mockSocialData.facebook.score, engagement: mockSocialData.facebook.engagementRate },
@@ -120,6 +123,8 @@ export default function AIEnginePage() {
         <div className="border border-cyan-500/30 bg-[#102a43] p-6"><div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-cyan-300"><Sparkles size={16} />Strongest acquisition signal</div><p className="mt-4 text-3xl font-bold text-white">{strongestSocialChannel.name} is working harder for your business.</p><p className="mt-4 text-sm leading-6 text-slate-300">Its {strongestSocialChannel.engagement || strongestSocialChannel.score}% signal is the clearest audience-response signal across your active social channels.</p></div>
         <div className="border border-slate-700 bg-slate-900 p-6"><div className="flex items-start gap-3"><BrainCircuit size={23} className="mt-0.5 text-cyan-300" /><div><h2 className="font-semibold text-white">AI interpretation</h2><p className="mt-2 text-sm leading-6 text-slate-300">Educational short-form videos generate approximately 2.8x more engagement than promotional content. Your audience is signaling that useful, specific teaching content is the best route to attention and trust.</p></div></div><div className="mt-5 border-l-2 border-amber-300 bg-amber-300/5 p-4"><div className="flex items-center gap-2 text-sm font-semibold text-amber-100"><Lightbulb size={17} />Recommendation</div><p className="mt-2 text-sm text-slate-300">Publish three educational videos next week focused on your strongest topic, then turn the best performer into an Instagram and LinkedIn series.</p><button type="button" className="mt-4 inline-flex items-center gap-1.5 bg-cyan-400 px-3 py-2 text-sm font-bold text-slate-950 hover:bg-cyan-300">Create content plan <ArrowUpRight size={15} /></button></div></div>
       </section>
+
+      <MarketingCoach activeChannels={activeChannels} />
 
       {/* Overall Score */}
       <div className="border border-slate-700 bg-slate-900 p-6 md:p-8 mb-8 flex flex-col md:flex-row items-center gap-8">
@@ -172,7 +177,7 @@ export default function AIEnginePage() {
         </div>
       </div>
 
-      <div className="mb-8 border border-slate-700 bg-slate-900 p-5"><h2 className="text-lg font-semibold text-white">Why the score adapts</h2><p className="mt-2 max-w-3xl text-sm leading-6 text-slate-400">The baseline model weights Website, SEO, Google, Social Media, Content, Customer Engagement, and Conversion at 15%, 15%, 15%, 20%, 15%, 10%, and 10%. When a source is not part of your marketing strategy, MarketGrowthAI removes it from the calculation and proportionally redistributes its weight instead of treating it as a failure.</p><p className="mt-3 text-sm font-medium text-cyan-200">Active sources in this workspace: {activeChannels.join(", ")}</p></div>
+      <div className="mb-8 border border-slate-700 bg-slate-900 p-5"><h2 className="text-lg font-semibold text-white">Business analysis</h2><p className="mt-2 max-w-3xl text-sm leading-6 text-slate-300">{analysis.summary}</p><div className="mt-4 grid gap-3 md:grid-cols-2">{analysis.opportunities.slice(0, 4).map((opportunity) => <div key={opportunity.id} className="border border-slate-700 bg-slate-950/40 p-3"><p className="text-sm font-semibold text-white">{opportunity.title}</p><p className="mt-1 text-xs text-slate-400">{opportunity.impact}</p></div>)}</div><h3 className="mt-6 text-sm font-semibold text-white">Why the score adapts</h3><p className="mt-2 max-w-3xl text-sm leading-6 text-slate-400">The baseline model weights Website, SEO, Google, Social Media, Content, Customer Engagement, and Conversion at 15%, 15%, 15%, 20%, 15%, 10%, and 10%. When a source is not part of your marketing strategy, MarketGrowthAI removes it from the calculation and proportionally redistributes its weight instead of treating it as a failure.</p><p className="mt-3 text-sm font-medium text-cyan-200">Active sources in this workspace: {activeChannels.join(", ")}</p></div>
 
       {/* How It Works */}
       <h2 className="text-lg font-semibold text-white mb-4">How the AI Engine Works</h2>
