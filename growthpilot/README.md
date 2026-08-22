@@ -33,6 +33,18 @@ Apply the migration through the Supabase CLI or paste it into the Supabase SQL E
 
 Provider credentials and refresh tokens must remain in server-side secrets or an encrypted server-side vault; they are deliberately not stored in `connected_accounts`.
 
+## Billing
+
+The Billing & Plans workspace provides Starter, Growth, Pro, and Agency product tiers, usage-limit display, and agency seat management. The Checkout route at `/api/stripe/checkout` creates a Stripe subscription Checkout Session when `STRIPE_SECRET_KEY` and all plan-specific `STRIPE_PRICE_*` values are configured. In the local demo without Stripe credentials, plan changes are explicitly saved only to browser storage.
+
+Before production release, add a signed Stripe webhook that updates the `subscriptions` and `usage` tables after checkout, renewal, cancellation, and invoice-payment events. Do not trust browser plan state for entitlement decisions.
+
+## Phase 2: Business Intelligence
+
+The Website Intelligence page includes a live, server-side homepage scanner. It accepts a public `http` or `https` URL and evaluates title and meta tags, heading structure, canonical URLs, image alt text, and visible copy. It intentionally rejects localhost, `.local`, and IP-address targets to prevent server-side request forgery.
+
+Google Search Console, Google Analytics, Google Business Profile, and social performance dashboards are already represented in the product and database model. To replace their current demo data with live provider data, configure the server-side OAuth credentials shown in `.env.example`, register the callback URL with each provider, and apply the Supabase schema before storing connection metadata and synced metrics. Provider access tokens must be encrypted server-side and never sent to the browser.
+
 ## Quality Checks
 
 ```bash
