@@ -1,74 +1,83 @@
-import { mockGrowthScore, mockWebsiteData, mockGoogleData, mockSocialData } from "@/lib/mock-data";
-import { ScoreRing, SectionHeader } from "@/components/ui";
+"use client";
 
-const scoreDimensions = [
+import { useEffect, useState } from "react";
+import { mockGrowthScore, mockWebsiteData, mockSocialData } from "@/lib/mock-data";
+import { ScoreRing, SectionHeader } from "@/components/ui";
+import { ArrowUpRight, BrainCircuit, Lightbulb, Sparkles } from "lucide-react";
+import { calculateAdaptiveGrowthScore, type GrowthScoreDimension } from "@/lib/growth-score";
+
+const defaultChannels = ["Website", "Google Business Profile", "Instagram", "LinkedIn"];
+
+function buildScoreDimensions(activeChannels: string[]): GrowthScoreDimension[] {
+  const socialScores = [
+    activeChannels.includes("Instagram") ? mockSocialData.instagram.score : null,
+    activeChannels.includes("Facebook") ? mockSocialData.facebook.score : null,
+    activeChannels.includes("TikTok") ? mockSocialData.tiktok.score : null,
+    activeChannels.includes("YouTube") ? mockSocialData.youtube.score : null,
+    activeChannels.includes("LinkedIn") ? mockSocialData.linkedin.score : null,
+  ].filter((score): score is number => score !== null);
+  const socialScore = socialScores.length
+    ? Math.round(socialScores.reduce((total, score) => total + score, 0) / socialScores.length)
+    : mockGrowthScore.social;
+
+  return [
   {
-    label: "Website SEO",
+    key: "website",
+    label: "Website",
+    score: mockGrowthScore.website,
+    baseWeight: 15,
+    description: "Site health, speed, and user experience",
+    requiredChannels: ["Website"],
+  },
+  {
+    key: "seo",
+    label: "SEO",
     score: mockWebsiteData.seo.score,
-    weight: "15%",
-    description: "Keyword rankings, technical SEO, meta data",
+    baseWeight: 15,
+    description: "Keyword rankings, technical SEO, and metadata",
+    requiredChannels: ["Website"],
   },
   {
-    label: "Website Content",
+    key: "google",
+    label: "Google",
+    score: mockGrowthScore.google,
+    baseWeight: 15,
+    description: "Search visibility, analytics, and local presence",
+    requiredChannels: ["Website", "Google Business Profile"],
+  },
+  {
+    key: "social",
+    label: "Social Media",
+    score: socialScore,
+    baseWeight: 20,
+    description: "Only the social channels your business actively uses",
+    requiredChannels: ["Instagram", "Facebook", "TikTok", "YouTube", "LinkedIn"],
+  },
+  {
+    key: "content",
+    label: "Content",
     score: mockWebsiteData.content.score,
-    weight: "10%",
+    baseWeight: 15,
     description: "Content quality, depth, freshness",
+    requiredChannels: ["Website"],
   },
   {
-    label: "Website Conversion",
+    key: "engagement",
+    label: "Customer Engagement",
+    score: 73,
+    baseWeight: 10,
+    description: "Audience response, repeat attention, and reviews",
+  },
+  {
+    key: "conversion",
+    label: "Conversion",
     score: mockWebsiteData.conversion.score,
-    weight: "10%",
-    description: "CTAs, bounce rate, session duration",
+    baseWeight: 10,
+    description: "CTAs, qualified actions, and customer outcomes",
+    requiredChannels: ["Website"],
   },
-  {
-    label: "Google Search",
-    score: mockGoogleData.searchConsole.score,
-    weight: "15%",
-    description: "Impressions, CTR, average position",
-  },
-  {
-    label: "Google Analytics",
-    score: mockGoogleData.analytics.score,
-    weight: "10%",
-    description: "Sessions, traffic channels, user behavior",
-  },
-  {
-    label: "Google Business",
-    score: mockGoogleData.businessProfile.score,
-    weight: "10%",
-    description: "Profile completeness, reviews, local visibility",
-  },
-  {
-    label: "Instagram",
-    score: mockSocialData.instagram.score,
-    weight: "7%",
-    description: "Followers, engagement rate, reach",
-  },
-  {
-    label: "Facebook",
-    score: mockSocialData.facebook.score,
-    weight: "5%",
-    description: "Followers, engagement rate, reach",
-  },
-  {
-    label: "TikTok",
-    score: mockSocialData.tiktok.score,
-    weight: "7%",
-    description: "Followers, engagement, total views",
-  },
-  {
-    label: "YouTube",
-    score: mockSocialData.youtube.score,
-    weight: "6%",
-    description: "Subscribers, watch hours, views",
-  },
-  {
-    label: "LinkedIn",
-    score: mockSocialData.linkedin.score,
-    weight: "5%",
-    description: "Followers, engagement, impressions",
-  },
-];
+  ];
+}
 
 function getBarColor(score: number) {
   if (score >= 80) return "bg-green-500";
@@ -77,23 +86,49 @@ function getBarColor(score: number) {
 }
 
 export default function AIEnginePage() {
+  const [activeChannels, setActiveChannels] = useState(defaultChannels);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      const storedBusiness = window.localStorage.getItem("marketgrowthai.business");
+      if (!storedBusiness) return;
+      const parsedBusiness = JSON.parse(storedBusiness) as { marketingChannels?: string[] };
+      if (parsedBusiness.marketingChannels?.length) setActiveChannels(parsedBusiness.marketingChannels);
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, []);
+
+  const adaptiveScore = calculateAdaptiveGrowthScore(buildScoreDimensions(activeChannels), activeChannels);
+  const strongestSocialChannel = [
+    { name: "Instagram", score: mockSocialData.instagram.score, engagement: mockSocialData.instagram.engagementRate },
+    { name: "Facebook", score: mockSocialData.facebook.score, engagement: mockSocialData.facebook.engagementRate },
+    { name: "TikTok", score: mockSocialData.tiktok.score, engagement: mockSocialData.tiktok.engagementRate },
+    { name: "YouTube", score: mockSocialData.youtube.score, engagement: 0 },
+    { name: "LinkedIn", score: mockSocialData.linkedin.score, engagement: mockSocialData.linkedin.engagementRate },
+  ].filter((channel) => activeChannels.includes(channel.name)).sort((left, right) => right.score - left.score)[0]
+    ?? { name: "Instagram", score: mockSocialData.instagram.score, engagement: mockSocialData.instagram.engagementRate };
+
   return (
     <div>
       <SectionHeader
-        title="AI Engine"
-        subtitle="How your Business Growth Score is calculated across all data sources"
-        icon="🤖"
+        title="AI Marketing Intelligence"
+        subtitle="From raw performance signals to a clear growth decision."
+        icon="✦"
       />
 
+      <section className="mb-8 grid gap-4 lg:grid-cols-[0.85fr_1.15fr]">
+        <div className="border border-cyan-500/30 bg-[#102a43] p-6"><div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-cyan-300"><Sparkles size={16} />Strongest acquisition signal</div><p className="mt-4 text-3xl font-bold text-white">{strongestSocialChannel.name} is working harder for your business.</p><p className="mt-4 text-sm leading-6 text-slate-300">Its {strongestSocialChannel.engagement || strongestSocialChannel.score}% signal is the clearest audience-response signal across your active social channels.</p></div>
+        <div className="border border-slate-700 bg-slate-900 p-6"><div className="flex items-start gap-3"><BrainCircuit size={23} className="mt-0.5 text-cyan-300" /><div><h2 className="font-semibold text-white">AI interpretation</h2><p className="mt-2 text-sm leading-6 text-slate-300">Educational short-form videos generate approximately 2.8x more engagement than promotional content. Your audience is signaling that useful, specific teaching content is the best route to attention and trust.</p></div></div><div className="mt-5 border-l-2 border-amber-300 bg-amber-300/5 p-4"><div className="flex items-center gap-2 text-sm font-semibold text-amber-100"><Lightbulb size={17} />Recommendation</div><p className="mt-2 text-sm text-slate-300">Publish three educational videos next week focused on your strongest topic, then turn the best performer into an Instagram and LinkedIn series.</p><button type="button" className="mt-4 inline-flex items-center gap-1.5 bg-cyan-400 px-3 py-2 text-sm font-bold text-slate-950 hover:bg-cyan-300">Create content plan <ArrowUpRight size={15} /></button></div></div>
+      </section>
+
       {/* Overall Score */}
-      <div className="bg-gradient-to-br from-violet-900/40 to-blue-900/40 border border-violet-800/50 rounded-2xl p-8 mb-8 flex flex-col md:flex-row items-center gap-8">
-        <ScoreRing score={mockGrowthScore.overall} label="Business Growth Score" size="lg" />
+      <div className="border border-slate-700 bg-slate-900 p-6 md:p-8 mb-8 flex flex-col md:flex-row items-center gap-8">
+        <ScoreRing score={adaptiveScore.score} label="Business Growth Score" size="lg" />
         <div className="flex-1">
           <h2 className="text-xl font-bold text-white mb-2">Your Business Growth Score</h2>
           <p className="text-slate-400 text-sm mb-4">
-            The Business Growth Score is a composite AI-powered metric calculated from 11 data dimensions
-            across your website, Google presence, and social media channels. Each dimension is weighted
-            by its impact on measurable business growth.
+            A transparent, adaptive score calculated from the channels your business uses. Unused channels
+            are excluded and their weight is redistributed across the signals that matter to you.
           </p>
           <div className="grid grid-cols-3 gap-4">
             <div className="bg-slate-900/60 rounded-xl p-3 text-center">
@@ -113,15 +148,15 @@ export default function AIEnginePage() {
       </div>
 
       {/* Score Breakdown */}
-      <h2 className="text-lg font-semibold text-white mb-4">Score Breakdown</h2>
-      <div className="bg-slate-800 border border-slate-700 rounded-xl p-5 mb-8">
+      <h2 className="text-lg font-semibold text-white mb-4">Adaptive score breakdown</h2>
+      <div className="bg-slate-800 border border-slate-700 p-5 mb-8">
         <div className="space-y-4">
-          {scoreDimensions.map((dim, i) => (
-            <div key={i}>
+          {adaptiveScore.dimensions.map((dim) => (
+            <div key={dim.key}>
               <div className="flex items-center justify-between mb-1">
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-medium text-white">{dim.label}</span>
-                  <span className="text-xs text-slate-500">({dim.weight} weight)</span>
+                  <span className="text-xs text-slate-500">({dim.effectiveWeight}% effective weight)</span>
                 </div>
                 <span className="text-sm font-bold text-white">{dim.score}/100</span>
               </div>
@@ -137,6 +172,8 @@ export default function AIEnginePage() {
         </div>
       </div>
 
+      <div className="mb-8 border border-slate-700 bg-slate-900 p-5"><h2 className="text-lg font-semibold text-white">Why the score adapts</h2><p className="mt-2 max-w-3xl text-sm leading-6 text-slate-400">The baseline model weights Website, SEO, Google, Social Media, Content, Customer Engagement, and Conversion at 15%, 15%, 15%, 20%, 15%, 10%, and 10%. When a source is not part of your marketing strategy, MarketGrowthAI removes it from the calculation and proportionally redistributes its weight instead of treating it as a failure.</p><p className="mt-3 text-sm font-medium text-cyan-200">Active sources in this workspace: {activeChannels.join(", ")}</p></div>
+
       {/* How It Works */}
       <h2 className="text-lg font-semibold text-white mb-4">How the AI Engine Works</h2>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -145,7 +182,7 @@ export default function AIEnginePage() {
             step: "1",
             title: "Data Collection",
             description:
-              "GrowthPilot connects to your website, Google Search Console, Google Analytics, Google Business Profile, and 5 social media platforms to collect real-time performance data.",
+              "MarketGrowthAI connects to your website, Google Search Console, Google Analytics, Google Business Profile, and 5 social media platforms to collect real-time performance data.",
             icon: "📡",
           },
           {

@@ -1,36 +1,45 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# MarketGrowthAI
+
+MarketGrowthAI is an AI marketing and business growth platform. It brings together website, Google, and social signals to produce a Business Growth Score, prioritized insights, and AI-assisted actions.
 
 ## Getting Started
 
-First, run the development server:
+Install dependencies and start the development server:
 
 ```bash
+npm ci
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000). Unauthenticated visitors are directed to `/auth`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Authentication
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Phase 1B includes account creation, email/password sign-in, password reset requests, logout, and a three-step business onboarding flow.
 
-## Learn More
+To enable Supabase authentication, copy `.env.example` to `.env.local` and add the public URL and anon key from the Supabase project:
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+cp .env.example .env.local
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Without those variables, the app runs in clearly labeled demo mode using browser-only session and onboarding data. Demo mode is intended for product walkthroughs, not production use.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Database Architecture
 
-## Deploy on Vercel
+The Phase 1E Supabase schema lives in `supabase/migrations/0001_marketgrowthai_schema.sql`. It models each business as a tenant with tables for onboarding, connections, website analysis, Google data, social data, AI workflows, and future billing and competitor capabilities.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Apply the migration through the Supabase CLI or paste it into the Supabase SQL Editor after creating the project. It creates the `public.users` profile from `auth.users`, seeds the supported marketing channels, and enables row-level security so a signed-in user can access only records for businesses they own.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Provider credentials and refresh tokens must remain in server-side secrets or an encrypted server-side vault; they are deliberately not stored in `connected_accounts`.
+
+## Quality Checks
+
+```bash
+npm run lint
+npm run build
+```
+
+## Deployment
+
+Deploy the app to Vercel and configure the same `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` variables in the Vercel project settings.

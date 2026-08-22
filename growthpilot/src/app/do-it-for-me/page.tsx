@@ -1,3 +1,7 @@
+"use client";
+
+import { useState } from "react";
+import { CheckCircle2, ClipboardCheck, Eye, Send, ShieldCheck, Sparkles, WandSparkles } from "lucide-react";
 import { mockDoItForMeTasks } from "@/lib/mock-data";
 import { SectionHeader } from "@/components/ui";
 
@@ -8,13 +12,17 @@ const statusConfig = {
 };
 
 export default function DoItForMePage() {
+  const [actionState, setActionState] = useState<"opportunity" | "review" | "approved" | "published">("opportunity");
+
   return (
     <div>
       <SectionHeader
         title="Do It For Me AI"
-        subtitle="Let GrowthPilot AI automatically implement improvements for your business"
+        subtitle="Let MarketGrowthAI automatically implement improvements for your business"
         icon="⚡"
       />
+
+      <ActionWorkflow state={actionState} onStateChange={setActionState} />
 
       {/* Hero */}
       <div className="bg-gradient-to-br from-violet-900/40 to-blue-900/40 border border-violet-800/50 rounded-2xl p-8 mb-8">
@@ -23,7 +31,7 @@ export default function DoItForMePage() {
           <div>
             <h2 className="text-xl font-bold text-white mb-2">AI Takes Action For You</h2>
             <p className="text-slate-400 text-sm max-w-2xl">
-              Instead of just showing you what to fix, GrowthPilot&apos;s AI can automatically execute improvements
+              Instead of just showing you what to fix, MarketGrowthAI&apos;s AI can automatically execute improvements
               across your website, Google presence, and social media. Review and approve each action before it
               goes live, or let the AI work autonomously.
             </p>
@@ -132,5 +140,49 @@ export default function DoItForMePage() {
         })}
       </div>
     </div>
+  );
+}
+
+function ActionWorkflow({
+  state,
+  onStateChange,
+}: {
+  state: "opportunity" | "review" | "approved" | "published";
+  onStateChange: (state: "opportunity" | "review" | "approved" | "published") => void;
+}) {
+  const step = state === "opportunity" ? 0 : state === "review" ? 1 : state === "approved" ? 2 : 3;
+  const drafts = [
+    "Three mistakes that quietly limit your business growth score",
+    "What an AI marketing audit sees in the first 10 seconds",
+    "One website change that makes visitors more likely to act",
+    "How to turn one customer question into five content ideas",
+    "The signal that tells you where your next leads will come from",
+  ];
+
+  return (
+    <section className="mb-8 border border-cyan-500/30 bg-[#102a43] p-6 md:p-8">
+      <div className="flex flex-col justify-between gap-5 lg:flex-row lg:items-start">
+        <div className="max-w-2xl">
+          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-cyan-300"><Sparkles size={16} />AI Action Center</div>
+          <h2 className="mt-3 text-2xl font-bold text-white">AI finds the opportunity. You control the outcome.</h2>
+          <p className="mt-3 text-sm leading-6 text-slate-300">Your Instagram Reels are performing 47% better than your standard posts. MarketGrowthAI recommends a focused set of five educational Reels based on your strongest topic.</p>
+        </div>
+        <div className="flex items-center gap-2 text-xs font-medium text-cyan-100"><ShieldCheck size={17} />Autonomous publishing is off</div>
+      </div>
+
+      <div className="mt-6 grid grid-cols-4 gap-2">{["Generate", "Review", "Approve", "Publish"].map((label, index) => <div key={label}><div className={`h-1.5 ${index <= step ? "bg-cyan-400" : "bg-slate-800"}`} /><p className={`mt-2 text-xs font-medium ${index <= step ? "text-cyan-100" : "text-slate-500"}`}>{label}</p></div>)}</div>
+
+      {state === "opportunity" && <button type="button" onClick={() => onStateChange("review")} className="mt-7 inline-flex items-center gap-2 bg-cyan-400 px-4 py-2.5 text-sm font-bold text-slate-950 hover:bg-cyan-300"><WandSparkles size={16} />Generate 5 Reels</button>}
+      {state === "review" && <div className="mt-7"><div className="flex items-center gap-2 text-sm font-semibold text-amber-100"><Eye size={17} />Five drafts are ready for review</div><ol className="mt-3 space-y-2">{drafts.map((draft, index) => <li key={draft} className="flex gap-3 border border-slate-700 bg-slate-950/40 p-3 text-sm text-slate-300"><span className="font-bold text-cyan-300">{index + 1}</span>{draft}</li>)}</ol><button type="button" onClick={() => onStateChange("approved")} className="mt-5 inline-flex items-center gap-2 bg-cyan-400 px-4 py-2.5 text-sm font-bold text-slate-950 hover:bg-cyan-300"><ClipboardCheck size={16} />Approve 5 drafts</button></div>}
+      {state === "approved" && <div className="mt-7 border border-emerald-500/30 bg-emerald-500/10 p-4"><div className="flex items-center gap-2 text-sm font-semibold text-emerald-100"><CheckCircle2 size={17} />Approved and ready to publish</div><p className="mt-2 text-sm text-slate-300">Nothing will be posted until you publish this batch.</p><button type="button" onClick={() => onStateChange("published")} className="mt-4 inline-flex items-center gap-2 bg-cyan-400 px-4 py-2.5 text-sm font-bold text-slate-950 hover:bg-cyan-300"><Send size={16} />Publish 5 Reels</button></div>}
+      {state === "published" && <div className="mt-7 flex items-start gap-3 border border-emerald-500/30 bg-emerald-500/10 p-4 text-sm text-emerald-100"><CheckCircle2 size={19} className="mt-0.5 shrink-0" /><div><p className="font-semibold">Five Reels are scheduled for publishing.</p><p className="mt-1 text-emerald-100/70">The approved action is now recorded in your execution history.</p></div></div>}
+
+      <div className="mt-7 grid gap-3 border-t border-cyan-100/15 pt-5 md:grid-cols-4">{[
+        ["Find problem", "Monitor connected signals for a verified opportunity."],
+        ["Recommend fix", "Explain the evidence and expected result."],
+        ["Generate solution", "Prepare a draft or configured change."],
+        ["Approve and execute", "A person signs off before anything goes live."],
+      ].map(([title, description], index) => <div key={title} className="flex gap-3"><span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-cyan-400/10 text-xs font-bold text-cyan-300">{index + 1}</span><div><p className="text-xs font-semibold text-slate-200">{title}</p><p className="mt-1 text-xs leading-5 text-slate-500">{description}</p></div></div>)}</div>
+    </section>
   );
 }

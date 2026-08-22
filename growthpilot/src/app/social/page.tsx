@@ -1,19 +1,38 @@
 import { mockSocialData } from "@/lib/mock-data";
 import { ScoreRing, StatCard, SectionHeader } from "@/components/ui";
+import { ArrowUpRight, Lightbulb, Sparkles, TrendingUp } from "lucide-react";
 
 export default function SocialPage() {
   const { instagram, facebook, tiktok, youtube, linkedin } = mockSocialData;
+  const totalReach = instagram.reach + facebook.reach + tiktok.totalViews + youtube.views + linkedin.impressions;
+  const performance = [
+    { name: "TikTok", score: tiktok.score, engagement: tiktok.engagementRate, signal: "Fastest audience growth" },
+    { name: "Instagram", score: instagram.score, engagement: instagram.engagementRate, signal: "Strong community response" },
+    { name: "LinkedIn", score: linkedin.score, engagement: linkedin.engagementRate, signal: "Best B2B conversation" },
+    { name: "Facebook", score: facebook.score, engagement: facebook.engagementRate, signal: "Needs a content reset" },
+    { name: "YouTube", score: youtube.score, engagement: 0, signal: "Long-term discovery play" },
+  ];
 
   return (
     <div>
       <SectionHeader
-        title="Social Media"
-        subtitle="Instagram, Facebook, TikTok, YouTube, and LinkedIn performance"
-        icon="📱"
+        title="Social performance"
+        subtitle="A single read on where your audience is responding and where to focus next."
+        icon="✦"
       />
 
+      <div className="mb-8 grid gap-4 lg:grid-cols-[1.15fr_0.85fr]">
+        <section className="border border-cyan-500/30 bg-[#102a43] p-6">
+          <div className="flex items-start justify-between gap-4"><div><p className="text-xs font-semibold uppercase tracking-[0.12em] text-cyan-300">Social Growth Score</p><p className="mt-2 text-5xl font-bold text-white">71<span className="ml-1 text-lg font-medium text-slate-400">/100</span></p><p className="mt-3 text-sm text-slate-300">Your social presence is growing, led by short-form video and high-intent LinkedIn engagement.</p></div><TrendingUp className="text-cyan-300" size={28} /></div>
+          <div className="mt-6 grid grid-cols-2 gap-3 border-t border-cyan-100/15 pt-5"><div><p className="text-xs text-slate-400">Audience reached</p><p className="mt-1 text-xl font-bold text-white">{Math.round(totalReach / 1000)}K</p></div><div><p className="text-xs text-slate-400">Fastest growth</p><p className="mt-1 text-xl font-bold text-white">TikTok <span className="text-sm text-emerald-300">+{tiktok.followersChange}</span></p></div></div>
+        </section>
+        <section className="border border-slate-700 bg-slate-900 p-6"><div className="flex items-start gap-3"><Lightbulb size={21} className="mt-0.5 text-amber-300" /><div><p className="font-semibold text-white">AI opportunity</p><p className="mt-2 text-sm leading-6 text-slate-300">TikTok engagement is {tiktok.engagementRate}% - more than three times Instagram. Turn your highest-performing clips into a recurring weekly series.</p><button type="button" className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-cyan-300 hover:text-cyan-200">Create content plan <ArrowUpRight size={15} /></button></div></div></section>
+      </div>
+
+      <section className="mb-8 border border-slate-700 bg-slate-900 p-5"><div className="mb-4 flex items-center gap-2"><Sparkles size={19} className="text-cyan-300" /><div><h2 className="text-lg font-semibold text-white">Channel comparison</h2><p className="text-xs text-slate-400">Performance is ranked by content response, audience growth, and consistency.</p></div></div><div className="grid gap-3 md:grid-cols-5">{performance.map((channel) => <div key={channel.name} className="border border-slate-700 bg-slate-950/40 p-4"><div className="flex items-center justify-between"><p className="text-sm font-semibold text-white">{channel.name}</p><span className="text-sm font-bold text-cyan-300">{channel.score}</span></div><div className="mt-3 h-1.5 bg-slate-800"><div className="h-full bg-cyan-400" style={{ width: `${channel.score}%` }} /></div><p className="mt-3 text-xs text-slate-400">{channel.engagement ? `${channel.engagement}% engagement` : "Discovery metric"}</p><p className="mt-1 text-xs text-slate-500">{channel.signal}</p></div>)}</div></section>
+
       {/* Score Overview */}
-      <div className="bg-slate-800 border border-slate-700 rounded-2xl p-6 mb-8 flex flex-wrap gap-6 items-center">
+      <div className="bg-slate-800 border border-slate-700 p-6 mb-8 flex flex-wrap gap-6 items-center">
         <ScoreRing score={instagram.score} label="Instagram" size="sm" />
         <ScoreRing score={facebook.score} label="Facebook" size="sm" />
         <ScoreRing score={tiktok.score} label="TikTok" size="sm" />

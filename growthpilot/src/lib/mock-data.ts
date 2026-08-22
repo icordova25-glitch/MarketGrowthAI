@@ -1,4 +1,4 @@
-// Mock data for GrowthPilot platform
+// Mock data for MarketGrowthAI platform
 
 export const mockBusinessProfile = {
   name: "Acme Digital Co.",
@@ -139,7 +139,7 @@ export const mockSocialData = {
     totalViews: 284000,
     topVideos: [
       { caption: "AI analyzed our website and found THIS 😱", views: 48000, likes: 3200, shares: 890 },
-      { caption: "From 0 to 10k followers using GrowthPilot", views: 32000, likes: 2400, shares: 640 },
+      { caption: "From 0 to 10k followers using MarketGrowthAI", views: 32000, likes: 2400, shares: 640 },
     ],
   },
   youtube: {
@@ -150,7 +150,7 @@ export const mockSocialData = {
     watchHours: 940,
     videos: 28,
     topVideos: [
-      { title: "Full GrowthPilot Walkthrough 2025", views: 4800, likes: 342, comments: 89 },
+      { title: "Full MarketGrowthAI Walkthrough 2025", views: 4800, likes: 342, comments: 89 },
       { title: "How to Connect Google Search Console", views: 2900, likes: 198, comments: 54 },
     ],
   },
