@@ -39,6 +39,14 @@ The Billing & Plans workspace provides Starter, Growth, Pro, and Agency product 
 
 Before production release, add a signed Stripe webhook that updates the `subscriptions` and `usage` tables after checkout, renewal, cancellation, and invoice-payment events. Do not trust browser plan state for entitlement decisions.
 
+## Admin Portal
+
+The customer portal and platform administration are separate protected areas of the same application. Customer routes use the main app shell. Owner-only routes live under `/admin` and use a separate operations shell for customer health, subscriptions, revenue, usage, system status, and optimization opportunities.
+
+Production admin authorization uses immutable Supabase `app_metadata.platform_role = owner`, verified by the owner-only route guard and the `0002_platform_admin_roles.sql` migration policies. Do not grant administrative access from user-editable profile metadata, browser storage, or a plan value. For the local demo only, `owner@example.test` acts as the owner account.
+
+The Step 11 admin-membership foundation lives in `supabase/migrations/0003_admin_memberships_and_audit.sql`. It defines owner, platform-admin, support, and analyst membership records plus append-only audit events. A production invite flow must use a server-side Supabase Admin API action to set immutable `app_metadata` claims, send the invitation, and record the audit event. Browser state is demo-only and must never grant access.
+
 ## Phase 2: Business Intelligence
 
 The Website Intelligence page includes a live, server-side homepage scanner. It accepts a public `http` or `https` URL and evaluates title and meta tags, heading structure, canonical URLs, image alt text, and visible copy. It intentionally rejects localhost, `.local`, and IP-address targets to prevent server-side request forgery.

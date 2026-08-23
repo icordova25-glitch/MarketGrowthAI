@@ -54,7 +54,7 @@ export default function AuthPage() {
       setMessage("Check your inbox to confirm your email, then return here to sign in.");
       setView("sign-in");
     } else {
-      router.replace("/onboarding");
+      router.replace(email.toLowerCase() === "owner@example.test" ? "/admin" : "/onboarding");
     }
   }
 
