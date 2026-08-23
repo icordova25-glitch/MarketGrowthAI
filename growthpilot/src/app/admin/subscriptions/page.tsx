@@ -1,0 +1,37 @@
+import { ArrowDownRight, ArrowUpRight, BadgeDollarSign, ChartNoAxesCombined, CreditCard, RefreshCw, UsersRound } from "lucide-react";
+
+const revenueMetrics = [
+  { label: "Monthly recurring revenue", value: "$18,420", detail: "+12.4% vs. last month", direction: "up" },
+  { label: "Annual recurring revenue", value: "$221,040", detail: "Annualized current MRR", direction: "flat" },
+  { label: "Revenue this month", value: "$19,870", detail: "+$2,140 net new revenue", direction: "up" },
+  { label: "Average revenue per customer", value: "$59.04", detail: "Across 312 active customers", direction: "flat" },
+  { label: "Lifetime value", value: "$1,126", detail: "Blended customer lifetime value", direction: "up" },
+  { label: "Failed payments", value: "3", detail: "Require billing follow-up", direction: "down" },
+];
+
+const subscriptionMetrics = [
+  ["Active subscriptions", "312", "+18 this month"],
+  ["New subscriptions", "24", "8 from trials"],
+  ["Upgrades", "11", "Starter to Growth / Pro"],
+  ["Downgrades", "3", "Review limit and value signals"],
+  ["Cancellations", "9", "2.8% monthly churn"],
+  ["Trial conversions", "68%", "of eligible trials"],
+];
+
+const revenue = [12600, 13400, 14150, 14600, 15300, 16080, 17100, 18420];
+
+export default function SubscriptionsAdminPage() {
+  return <div className="mx-auto max-w-7xl"><div className="mb-8 flex flex-col justify-between gap-4 md:flex-row md:items-end"><div><div className="flex items-center gap-3 text-cyan-300"><CreditCard size={21} /><span className="text-xs font-semibold uppercase tracking-[0.14em]">Platform operations</span></div><h1 className="mt-3 text-3xl font-bold text-white">Subscription & revenue</h1><p className="mt-2 text-sm text-slate-400">Recurring-revenue performance, customer subscription movement, and billing exceptions.</p></div><a href="https://dashboard.stripe.com" target="_blank" rel="noreferrer" className="inline-flex items-center justify-center gap-2 border border-cyan-400 px-4 py-2.5 text-sm font-bold text-cyan-200 hover:bg-cyan-400 hover:text-slate-950"><BadgeDollarSign size={16} />Open Stripe Dashboard</a></div>
+    <section className="border border-cyan-500/30 bg-[#102a43] p-5"><div className="flex flex-col justify-between gap-4 md:flex-row md:items-start"><div><h2 className="text-lg font-semibold text-white">Stripe is the financial system of record</h2><p className="mt-2 max-w-3xl text-sm leading-6 text-slate-300">MarketGrowthAI records subscription state and usage for product entitlements. Stripe processes payments, stores payment methods, and manages payouts. This admin portal never collects or displays bank-account or card details.</p></div><div className="flex items-center gap-2 text-sm font-semibold text-cyan-100"><RefreshCw size={16} />Webhook sync required</div></div></section>
+    <section className="mt-8"><div className="mb-4 flex items-center gap-2"><ChartNoAxesCombined size={20} className="text-cyan-300" /><h2 className="text-lg font-semibold text-white">Revenue</h2></div><div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{revenueMetrics.map((metric) => <article key={metric.label} className="border border-slate-700 bg-slate-900 p-5"><p className="text-sm text-slate-400">{metric.label}</p><p className="mt-3 text-3xl font-bold text-white">{metric.value}</p><p className={`mt-2 inline-flex items-center gap-1 text-xs font-semibold ${metric.direction === "up" ? "text-emerald-300" : metric.direction === "down" ? "text-amber-200" : "text-slate-500"}`}>{metric.direction === "up" && <ArrowUpRight size={14} />}{metric.direction === "down" && <ArrowDownRight size={14} />}{metric.detail}</p></article>)}</div></section>
+    <section className="mt-8 grid gap-6 xl:grid-cols-[1.15fr_0.85fr]"><div className="border border-slate-700 bg-slate-900 p-5"><div className="flex items-start justify-between"><div><h2 className="text-lg font-semibold text-white">MRR trend</h2><p className="mt-1 text-sm text-slate-400">Steady recurring-revenue growth over the last eight months.</p></div><p className="text-sm font-semibold text-emerald-300">+46.2% since January</p></div><div className="mt-8 flex h-56 items-end gap-3 border-b border-l border-slate-700 px-5 pb-7 pt-4">{revenue.map((amount, index) => <div key={amount} className="flex h-full flex-1 flex-col justify-end gap-2"><div className="group relative bg-cyan-400/80 hover:bg-cyan-300" style={{ height: `${(amount / Math.max(...revenue)) * 100}%` }}><span className="absolute -top-7 left-1/2 hidden -translate-x-1/2 whitespace-nowrap bg-slate-800 px-2 py-1 text-xs text-white group-hover:block">${amount.toLocaleString()}</span></div><span className="text-center text-xs text-slate-500">{["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug"][index]}</span></div>)}</div></div>
+      <div className="border border-slate-700 bg-slate-900 p-5"><div className="flex items-center gap-3"><UsersRound size={20} className="text-cyan-300" /><div><h2 className="text-lg font-semibold text-white">Plan distribution</h2><p className="mt-1 text-sm text-slate-400">Active subscriptions by tier.</p></div></div><div className="mt-6 space-y-5">{[["Starter", "128", "41%"], ["Growth", "143", "46%"], ["Pro", "41", "13%"]].map(([plan, count, share]) => <div key={plan}><div className="flex justify-between text-sm"><span className="font-medium text-slate-200">{plan}</span><span className="text-slate-400">{count} · {share}</span></div><div className="mt-2 h-2 bg-slate-800"><div className="h-full bg-cyan-400" style={{ width: share }} /></div></div>)}</div></div></section>
+    <section className="mt-8 grid gap-6 xl:grid-cols-[1fr_1fr]"><div className="border border-slate-700 bg-slate-900 p-5"><h2 className="text-lg font-semibold text-white">Subscription metrics</h2><p className="mt-1 text-sm text-slate-400">Movement that explains revenue changes and retention risk.</p><div className="mt-5 grid gap-3 sm:grid-cols-2">{subscriptionMetrics.map(([label, value, detail]) => <article key={label} className="border border-slate-700 bg-slate-950/40 p-4"><p className="text-xs text-slate-500">{label}</p><p className="mt-2 text-2xl font-bold text-white">{value}</p><p className="mt-2 text-xs text-slate-400">{detail}</p></article>)}</div></div>
+      <div className="border border-amber-400/30 bg-amber-400/5 p-5"><h2 className="text-lg font-semibold text-amber-50">Billing attention</h2><p className="mt-1 text-sm text-amber-100/70">Subscription events that need a human decision or an automated follow-up.</p><div className="mt-5 space-y-3">{[
+        ["3 failed subscription payments", "Stripe retries are in progress. Contact customers after the final retry."],
+        ["7 Growth customers near usage limits", "Offer a Pro upgrade before their scans or AI actions are limited."],
+        ["6 trials end this week", "Send an opportunity summary and conversion prompt before expiration."],
+        ["2 cancellation requests mention missing integrations", "Route product feedback to the integration roadmap."],
+      ].map(([title, detail]) => <article key={title} className="border border-amber-300/20 bg-slate-950/35 p-4"><p className="text-sm font-semibold text-amber-50">{title}</p><p className="mt-1 text-sm leading-6 text-amber-100/65">{detail}</p></article>)}</div></div></section>
+  </div>;
+}

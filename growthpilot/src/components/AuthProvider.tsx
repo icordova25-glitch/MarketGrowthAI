@@ -4,7 +4,7 @@ import type { User } from "@supabase/supabase-js";
 import { createContext, useContext, useEffect, useState } from "react";
 import { isSupabaseConfigured, supabase } from "@/lib/supabase";
 
-type AuthUser = Pick<User, "id" | "email"> & { name?: string };
+type AuthUser = Pick<User, "id" | "email"> & { name?: string; role: "customer" | "owner" };
 
 type AuthResult = {
   error?: string;
@@ -36,6 +36,23 @@ function createDemoUser(values: Pick<SignUpValues, "firstName" | "lastName" | "e
     id: `demo-${values.email.toLowerCase()}`,
     email: values.email.toLowerCase(),
     name: `${values.firstName} ${values.lastName}`.trim(),
+    role: values.email.toLowerCase() === "owner@example.test" ? "owner" : "customer",
+  };
+}
+
+function normalizeDemoUser(user: Omit<AuthUser, "role"> & { role?: AuthUser["role"] }): AuthUser {
+  return {
+    ...user,
+    role: user.role ?? (user.email?.toLowerCase() === "owner@example.test" ? "owner" : "customer"),
+  };
+}
+
+function toAuthUser(user: User): AuthUser {
+  return {
+    id: user.id,
+    email: user.email,
+    name: [user.user_metadata.first_name, user.user_metadata.last_name].filter(Boolean).join(" ") || user.email?.split("@")[0],
+    role: user.app_metadata.platform_role === "owner" ? "owner" : "customer",
   };
 }
 
@@ -48,7 +65,9 @@ export function AuthProvider({ children }: Readonly<{ children: React.ReactNode 
       const timer = window.setTimeout(() => {
         const storedSession = window.localStorage.getItem(DEMO_SESSION_KEY);
         if (storedSession) {
-          setUser(JSON.parse(storedSession) as AuthUser);
+          const demoUser = normalizeDemoUser(JSON.parse(storedSession) as AuthUser);
+          window.localStorage.setItem(DEMO_SESSION_KEY, JSON.stringify(demoUser));
+          setUser(demoUser);
         }
         setIsLoading(false);
       }, 0);
@@ -56,12 +75,12 @@ export function AuthProvider({ children }: Readonly<{ children: React.ReactNode 
     }
 
     void supabase.auth.getUser().then(({ data }) => {
-      setUser(data.user);
+      setUser(data.user ? toAuthUser(data.user) : null);
       setIsLoading(false);
     });
 
     const { data: subscription } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
+      setUser(session?.user ? toAuthUser(session.user) : null);
     });
 
     return () => subscription.subscription.unsubscribe();
@@ -97,6 +116,7 @@ export function AuthProvider({ children }: Readonly<{ children: React.ReactNode 
           id: `demo-${email.toLowerCase()}`,
           email: email.toLowerCase(),
           name: email.split("@")[0],
+          role: email.toLowerCase() === "owner@example.test" ? "owner" : "customer",
         };
         window.localStorage.setItem(DEMO_SESSION_KEY, JSON.stringify(demoUser));
         setUser(demoUser);
