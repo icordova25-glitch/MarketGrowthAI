@@ -17,7 +17,7 @@ export function AppShell({ children }: Readonly<{ children: React.ReactNode }>) 
 
   useEffect(() => {
     if (!isLoading && !user && !isPublicRoute) router.replace("/auth");
-    if (!isLoading && user && isPublicRoute) router.replace(user.role === "owner" ? "/admin" : "/onboarding");
+    if (!isLoading && user && isPublicRoute) router.replace(user.role === "owner" ? "/admin" : "/");
     if (!isLoading && user && isAdminRoute && user.role !== "owner") router.replace("/");
   }, [isAdminRoute, isLoading, isPublicRoute, pathname, router, user]);
 

@@ -23,7 +23,7 @@ To enable Supabase authentication, copy `.env.example` to `.env.local` and add t
 cp .env.example .env.local
 ```
 
-Without those variables, the app runs in clearly labeled demo mode using browser-only session and onboarding data. Demo mode is intended for product walkthroughs, not production use.
+Without those variables, authentication is unavailable by default. To run local demo mode for walkthroughs, set `NEXT_PUBLIC_ALLOW_DEMO_MODE=true` in `.env.local` and use a non-production build.
 
 ## Database Architecture
 
@@ -37,7 +37,7 @@ Provider credentials and refresh tokens must remain in server-side secrets or an
 
 The Billing & Plans workspace provides Starter, Growth, Pro, and Agency product tiers, usage-limit display, and agency seat management. The Checkout route at `/api/stripe/checkout` creates a Stripe subscription Checkout Session when `STRIPE_SECRET_KEY` and all plan-specific `STRIPE_PRICE_*` values are configured. In the local demo without Stripe credentials, plan changes are explicitly saved only to browser storage.
 
-Before production release, add a signed Stripe webhook that updates the `subscriptions` and `usage` tables after checkout, renewal, cancellation, and invoice-payment events. Do not trust browser plan state for entitlement decisions.
+Stripe checkout now requires an authenticated request and binds metadata to the internal user and business ids. Configure a signed webhook endpoint at `/api/stripe/webhook` so subscription status is synchronized on checkout completion, subscription updates/cancellations, and invoice payment outcomes.
 
 ## Admin Portal
 
@@ -63,3 +63,11 @@ npm run build
 ## Deployment
 
 Deploy the app to Vercel and configure the same `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` variables in the Vercel project settings.
+
+For production workflows, also configure server-side secrets (never prefixed with `NEXT_PUBLIC_`):
+
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `OPENAI_API_KEY`
+- `STRIPE_SECRET_KEY`
+- `STRIPE_WEBHOOK_SECRET`
+- `STRIPE_PRICE_STARTER`, `STRIPE_PRICE_GROWTH`, `STRIPE_PRICE_PRO`, `STRIPE_PRICE_AGENCY`

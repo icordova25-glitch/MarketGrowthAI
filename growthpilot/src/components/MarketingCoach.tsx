@@ -2,6 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import { Bot, SendHorizonal } from "lucide-react";
+import { createAuthedJsonHeaders } from "@/lib/auth-fetch";
 
 export function MarketingCoach({ activeChannels }: { activeChannels: string[] }) {
   const [question, setQuestion] = useState("");
@@ -14,7 +15,11 @@ export function MarketingCoach({ activeChannels }: { activeChannels: string[] })
     event.preventDefault();
     setError("");
     setIsAsking(true);
-    const response = await fetch("/api/ai-coach", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ question, activeChannels }) });
+    const response = await fetch("/api/ai-coach", {
+      method: "POST",
+      headers: await createAuthedJsonHeaders(),
+      body: JSON.stringify({ question, activeChannels }),
+    });
     const result = await response.json() as { answer?: string; nextStep?: string; error?: string };
     setIsAsking(false);
     if (!response.ok) { setError(result.error ?? "The coach could not answer right now."); return; }

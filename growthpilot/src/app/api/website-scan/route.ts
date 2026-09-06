@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { requireAuthenticatedRequest } from "@/lib/server-auth";
+import { assertWithinLimit, getBillingPlan, incrementMetricUsage } from "@/lib/billing";
 
 export const runtime = "nodejs";
 
@@ -26,6 +28,39 @@ function isPublicHttpUrl(value: string) {
 }
 
 export async function POST(request: Request) {
+  const auth = await requireAuthenticatedRequest(request);
+  if (!auth) return NextResponse.json({ error: "Sign in is required." }, { status: 401 });
+
+  const { supabase, user } = auth;
+  const { data: business, error: businessError } = await supabase
+    .from("businesses")
+    .select("id")
+    .eq("owner_id", user.id)
+    .order("created_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+
+  if (businessError) return NextResponse.json({ error: businessError.message }, { status: 500 });
+  if (!business) return NextResponse.json({ error: "Complete onboarding before running a website scan." }, { status: 404 });
+
+  const { data: subscription, error: subscriptionError } = await supabase
+    .from("subscriptions")
+    .select("plan")
+    .eq("business_id", business.id)
+    .maybeSingle();
+
+  if (subscriptionError) return NextResponse.json({ error: subscriptionError.message }, { status: 500 });
+
+  const plan = getBillingPlan(subscription?.plan ?? "starter");
+  if (!plan) return NextResponse.json({ error: "Billing configuration is unavailable." }, { status: 500 });
+
+  try {
+    await assertWithinLimit(supabase, business.id, "website_scans", plan.limits.website_scans);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "This plan does not allow more website scans right now.";
+    return NextResponse.json({ error: message }, { status: 403 });
+  }
+
   const body = await request.json().catch(() => null) as { url?: string } | null;
   const url = body?.url?.trim();
 
@@ -70,6 +105,7 @@ export async function POST(request: Request) {
     if (words < 250) issues.push({ severity: "medium", description: `Homepage has ${words} visible words; add more helpful on-page context for search engines.` });
 
     const score = Math.max(0, 100 - issues.reduce((total, issue) => total + (issue.severity === "high" ? 18 : issue.severity === "medium" ? 9 : 4), 0));
+    await incrementMetricUsage(supabase, business.id, "website_scans");
     return NextResponse.json({ url, title, description, canonical, headings, images: images.length, missingAlt, words, score, issues });
   } catch {
     return NextResponse.json({ error: "MarketGrowthAI could not scan this site. Check the URL and try again." }, { status: 422 });

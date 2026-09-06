@@ -12,8 +12,30 @@ export default function AuthPage() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { signUp, signIn, resetPassword, isDemoMode } = useAuth();
+  const { signUp, signIn, resetPassword, isDemoMode, getAccessToken } = useAuth();
   const router = useRouter();
+
+  async function resolvePostAuthRoute(): Promise<string> {
+    const accessToken = await getAccessToken();
+    if (!accessToken) return "/onboarding";
+
+    const adminProbe = await fetch("/api/admin/system-health", {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+    if (adminProbe.ok) return "/admin";
+
+    const response = await fetch("/api/onboarding/profile", {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+
+    return response.ok ? "/" : "/onboarding";
+  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -54,7 +76,8 @@ export default function AuthPage() {
       setMessage("Check your inbox to confirm your email, then return here to sign in.");
       setView("sign-in");
     } else {
-      router.replace(email.toLowerCase() === "owner@example.test" ? "/admin" : "/onboarding");
+      const nextRoute = await resolvePostAuthRoute();
+      router.replace(nextRoute);
     }
   }
 

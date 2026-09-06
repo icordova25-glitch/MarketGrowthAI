@@ -2,7 +2,7 @@
 
 import type { User } from "@supabase/supabase-js";
 import { createContext, useContext, useEffect, useState } from "react";
-import { isSupabaseConfigured, supabase } from "@/lib/supabase";
+import { isDemoModeEnabled, supabase } from "@/lib/supabase";
 
 type AuthUser = Pick<User, "id" | "email"> & { name?: string; role: "customer" | "owner" };
 
@@ -15,6 +15,7 @@ type AuthContextValue = {
   user: AuthUser | null;
   isLoading: boolean;
   isDemoMode: boolean;
+  getAccessToken: () => Promise<string | null>;
   signUp: (values: SignUpValues) => Promise<AuthResult>;
   signIn: (email: string, password: string) => Promise<AuthResult>;
   resetPassword: (email: string) => Promise<AuthResult>;
@@ -32,18 +33,20 @@ const DEMO_SESSION_KEY = "marketgrowthai.demo-session";
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 function createDemoUser(values: Pick<SignUpValues, "firstName" | "lastName" | "email">): AuthUser {
+  const configuredDemoOwner = process.env.NEXT_PUBLIC_DEMO_ADMIN_EMAIL?.toLowerCase() ?? "";
   return {
     id: `demo-${values.email.toLowerCase()}`,
     email: values.email.toLowerCase(),
     name: `${values.firstName} ${values.lastName}`.trim(),
-    role: values.email.toLowerCase() === "owner@example.test" ? "owner" : "customer",
+    role: configuredDemoOwner && values.email.toLowerCase() === configuredDemoOwner ? "owner" : "customer",
   };
 }
 
 function normalizeDemoUser(user: Omit<AuthUser, "role"> & { role?: AuthUser["role"] }): AuthUser {
+  const configuredDemoOwner = process.env.NEXT_PUBLIC_DEMO_ADMIN_EMAIL?.toLowerCase() ?? "";
   return {
     ...user,
-    role: user.role ?? (user.email?.toLowerCase() === "owner@example.test" ? "owner" : "customer"),
+    role: user.role ?? (configuredDemoOwner && user.email?.toLowerCase() === configuredDemoOwner ? "owner" : "customer"),
   };
 }
 
@@ -58,10 +61,12 @@ function toAuthUser(user: User): AuthUser {
 
 export function AuthProvider({ children }: Readonly<{ children: React.ReactNode }>) {
   const [user, setUser] = useState<AuthUser | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(() => !(!supabase && !isDemoModeEnabled));
 
   useEffect(() => {
     if (!supabase) {
+      if (!isDemoModeEnabled) return;
+
       const timer = window.setTimeout(() => {
         const storedSession = window.localStorage.getItem(DEMO_SESSION_KEY);
         if (storedSession) {
@@ -89,9 +94,17 @@ export function AuthProvider({ children }: Readonly<{ children: React.ReactNode 
   const value: AuthContextValue = {
     user,
     isLoading,
-    isDemoMode: !isSupabaseConfigured,
+    isDemoMode: isDemoModeEnabled,
+    async getAccessToken() {
+      if (!supabase) return null;
+      const { data } = await supabase.auth.getSession();
+      return data.session?.access_token ?? null;
+    },
     async signUp(values) {
       if (!supabase) {
+        if (!isDemoModeEnabled) {
+          return { error: "Authentication is unavailable until Supabase is configured." };
+        }
         const demoUser = createDemoUser(values);
         window.localStorage.setItem(DEMO_SESSION_KEY, JSON.stringify(demoUser));
         setUser(demoUser);
@@ -112,11 +125,15 @@ export function AuthProvider({ children }: Readonly<{ children: React.ReactNode 
     },
     async signIn(email, password) {
       if (!supabase) {
+        if (!isDemoModeEnabled) {
+          return { error: "Authentication is unavailable until Supabase is configured." };
+        }
+        const configuredDemoOwner = process.env.NEXT_PUBLIC_DEMO_ADMIN_EMAIL?.toLowerCase() ?? "";
         const demoUser: AuthUser = {
           id: `demo-${email.toLowerCase()}`,
           email: email.toLowerCase(),
           name: email.split("@")[0],
-          role: email.toLowerCase() === "owner@example.test" ? "owner" : "customer",
+          role: configuredDemoOwner && email.toLowerCase() === configuredDemoOwner ? "owner" : "customer",
         };
         window.localStorage.setItem(DEMO_SESSION_KEY, JSON.stringify(demoUser));
         setUser(demoUser);
@@ -128,7 +145,7 @@ export function AuthProvider({ children }: Readonly<{ children: React.ReactNode 
     },
     async resetPassword(email) {
       if (!supabase) {
-        return { error: "Password reset is available once Supabase is connected." };
+        return { error: "Password reset is unavailable until Supabase is configured." };
       }
 
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
@@ -138,7 +155,7 @@ export function AuthProvider({ children }: Readonly<{ children: React.ReactNode 
     },
     async signOut() {
       if (supabase) await supabase.auth.signOut();
-      window.localStorage.removeItem(DEMO_SESSION_KEY);
+      if (isDemoModeEnabled) window.localStorage.removeItem(DEMO_SESSION_KEY);
       setUser(null);
     },
   };

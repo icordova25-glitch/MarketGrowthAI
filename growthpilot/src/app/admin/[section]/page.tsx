@@ -1,18 +1,21 @@
-import { notFound } from "next/navigation";
-import { Activity, BarChart3, CreditCard, Settings, UsersRound } from "lucide-react";
+import { notFound, redirect } from "next/navigation";
 
-const sections = {
-  customers: { title: "Customers", description: "Review customer activation, product adoption, and account risk.", icon: UsersRound, metrics: [["Active customers", "128"], ["At-risk accounts", "9"], ["Trials ending this week", "6"]], items: ["Prioritize customers with no recent website scan or insight activity.", "Review activation milestones for newly created workspaces.", "Identify accounts approaching plan limits before service disruption."] },
-  subscriptions: { title: "Subscriptions", description: "Monitor plans, renewals, upgrade signals, and billing status.", icon: CreditCard, metrics: [["Monthly recurring revenue", "$8,942"], ["Growth & Pro share", "61%"], ["Payment attention items", "3"]], items: ["Follow up on trials ending in the next seven days.", "Offer an upgrade path to customers reaching 80% of their plan limits.", "Resolve any Stripe webhook or payment-status exceptions."] },
-  reports: { title: "Platform reports", description: "Track revenue, activation, retention, and feature adoption across the SaaS.", icon: BarChart3, metrics: [["Activation rate", "67%"], ["Weekly active workspaces", "86"], ["Content drafts created", "2,431"]], items: ["Compare activation by acquisition source and plan tier.", "Review which recommendations lead to approved AI actions.", "Export client-ready reporting for agency accounts."] },
-  system: { title: "System health", description: "Monitor application services, integrations, and data-collection jobs.", icon: Activity, metrics: [["Application uptime", "99.98%"], ["Connected sources", "324"], ["Sync failures", "3"]], items: ["Renew expired integration credentials before the next scheduled sync.", "Review website-scanner latency and failed target requests.", "Confirm Stripe webhooks are receiving and processing events."] },
-  settings: { title: "Platform settings", description: "Manage platform-level configuration and operational safeguards.", icon: Settings, metrics: [["Admin owners", "1"], ["Enabled workflows", "4"], ["Environment checks", "2 pending"]], items: ["Set platform-owner roles only through Supabase app_metadata.", "Configure server-side provider credentials and webhook signing secrets.", "Review audit logs before changing platform-wide defaults."] },
-} as const;
+const sectionRedirects: Record<string, string> = {
+  customers: "/admin/customers",
+  subscriptions: "/admin/subscriptions",
+  reports: "/admin/reports",
+  system: "/admin/system",
+  settings: "/admin/users",
+  product: "/admin/product",
+  optimization: "/admin/optimization",
+  users: "/admin/users",
+  payouts: "/admin/payouts",
+  "ai-costs": "/admin/ai-costs",
+};
 
 export default async function AdminSectionPage({ params }: { params: Promise<{ section: string }> }) {
   const { section } = await params;
-  const config = sections[section as keyof typeof sections];
-  if (!config) notFound();
-  const Icon = config.icon;
-  return <div className="mx-auto max-w-6xl"><div className="mb-8"><div className="flex items-center gap-3 text-cyan-300"><Icon size={21} /><span className="text-xs font-semibold uppercase tracking-[0.14em]">Platform operations</span></div><h1 className="mt-3 text-3xl font-bold text-white">{config.title}</h1><p className="mt-2 text-sm text-slate-400">{config.description}</p></div><div className="grid gap-4 md:grid-cols-3">{config.metrics.map(([label, value]) => <article key={label} className="border border-slate-700 bg-slate-900 p-5"><p className="text-sm text-slate-400">{label}</p><p className="mt-3 text-3xl font-bold text-white">{value}</p></article>)}</div><section className="mt-8 border border-slate-700 bg-slate-900 p-5"><h2 className="text-lg font-semibold text-white">Operator checklist</h2><p className="mt-1 text-sm text-slate-400">These operational controls will become live data views once Supabase and provider integrations are connected.</p><div className="mt-5 space-y-3">{config.items.map((item, index) => <div key={item} className="flex gap-3 border-l-2 border-cyan-400 bg-slate-950/40 p-4"><span className="text-sm font-bold text-cyan-300">{index + 1}</span><p className="text-sm leading-6 text-slate-300">{item}</p></div>)}</div></section></div>;
+  const destination = sectionRedirects[section];
+  if (!destination) notFound();
+  redirect(destination);
 }

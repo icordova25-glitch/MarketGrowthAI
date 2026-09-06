@@ -1,8 +1,9 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { ArrowRight, Building2, Check, MapPinned, Target, UsersRound } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { createAuthedJsonHeaders } from "@/lib/auth-fetch";
 
 const steps = ["Business", "Customers", "Marketing channels"];
 const channels = [
@@ -29,6 +30,10 @@ type BusinessProfile = {
   differentiator: string;
 };
 
+type SavedBusinessProfile = BusinessProfile & {
+  marketingChannels: string[];
+};
+
 const initialProfile: BusinessProfile = {
   businessName: "",
   industry: "",
@@ -45,21 +50,71 @@ const initialProfile: BusinessProfile = {
 export default function OnboardingPage() {
   const [step, setStep] = useState(0);
   const [isSaving, setIsSaving] = useState(false);
+  const [isLoadingProfile, setIsLoadingProfile] = useState(true);
+  const [error, setError] = useState("");
   const [profile, setProfile] = useState<BusinessProfile>(initialProfile);
   const [selectedChannels, setSelectedChannels] = useState<string[]>([]);
   const router = useRouter();
 
-  function handleNext(event: FormEvent<HTMLFormElement>) {
+  useEffect(() => {
+    let isActive = true;
+
+    void (async () => {
+      const response = await fetch("/api/onboarding/profile", {
+        method: "GET",
+        headers: await createAuthedJsonHeaders(),
+      });
+
+      if (!isActive) return;
+      if (!response.ok) {
+        setIsLoadingProfile(false);
+        return;
+      }
+
+      const savedProfile = await response.json() as SavedBusinessProfile;
+      setProfile({
+        businessName: savedProfile.businessName ?? "",
+        industry: savedProfile.industry ?? "",
+        businessType: savedProfile.businessType ?? "",
+        city: savedProfile.city ?? "",
+        state: savedProfile.state ?? "",
+        website: savedProfile.website ?? "",
+        idealCustomers: savedProfile.idealCustomers ?? "",
+        productsAndServices: savedProfile.productsAndServices ?? "",
+        serviceArea: savedProfile.serviceArea ?? "",
+        differentiator: savedProfile.differentiator ?? "",
+      });
+      setSelectedChannels(Array.isArray(savedProfile.marketingChannels) ? savedProfile.marketingChannels : []);
+      setIsLoadingProfile(false);
+    })();
+
+    return () => {
+      isActive = false;
+    };
+  }, []);
+
+  async function handleNext(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    setError("");
     if (step < steps.length - 1) {
       setStep((current) => current + 1);
       return;
     }
+
     setIsSaving(true);
-    window.localStorage.setItem(
-      "marketgrowthai.business",
-      JSON.stringify({ ...profile, marketingChannels: selectedChannels })
-    );
+    const response = await fetch("/api/onboarding/profile", {
+      method: "POST",
+      headers: await createAuthedJsonHeaders(),
+      body: JSON.stringify({ ...profile, marketingChannels: selectedChannels }),
+    });
+
+    setIsSaving(false);
+    if (!response.ok) {
+      const result = await response.json().catch(() => ({ error: "Unable to save onboarding details." })) as { error?: string };
+      setError(result.error ?? "Unable to save onboarding details.");
+      return;
+    }
+
     router.replace("/connections");
   }
 
@@ -80,11 +135,13 @@ export default function OnboardingPage() {
       <div className="w-full">
         <div className="mb-10"><p className="text-sm font-semibold uppercase tracking-[0.14em] text-cyan-300">Workspace setup</p><h1 className="mt-2 text-3xl font-bold text-white">Tell us how your business grows.</h1><p className="mt-2 max-w-2xl text-slate-400">This context helps MarketGrowthAI understand your customers, evaluate the right channels, and create a relevant first analysis.</p></div>
         <div className="mb-10 grid grid-cols-3 gap-2">{steps.map((label, index) => <div key={label}><div className={`h-1 ${index <= step ? "bg-cyan-400" : "bg-slate-800"}`} /><p className={`mt-2 text-xs ${index <= step ? "text-cyan-200" : "text-slate-600"}`}>Step {index + 1} · {label}</p></div>)}</div>
+        {isLoadingProfile && <p className="mb-4 text-sm text-slate-400">Loading saved onboarding profile...</p>}
         <form onSubmit={handleNext} className="border border-slate-700 bg-slate-900 p-6 sm:p-8">
           {step === 0 && <StepContent icon={<Building2 size={22} />} title="About the business" description="Start with the core details MarketGrowthAI needs to create relevant benchmarks."><div className="grid gap-4 sm:grid-cols-2"><Field label="Business name" name="businessName" placeholder="Northstar Studio" value={profile.businessName} onChange={updateField} required /><Field label="Industry" name="industry" placeholder="Professional services" value={profile.industry} onChange={updateField} required /><Field label="Business type" name="businessType" placeholder="Local service business" value={profile.businessType} onChange={updateField} required /><Field label="Website (optional)" name="website" type="url" placeholder="https://example.com" value={profile.website} onChange={updateField} /><Field label="City" name="city" placeholder="Austin" value={profile.city} onChange={updateField} required /><Field label="State" name="state" placeholder="Texas" value={profile.state} onChange={updateField} required /></div></StepContent>}
           {step === 1 && <StepContent icon={<Target size={22} />} title="Your customers and value" description="Help us understand who you serve and why they choose you."><div className="grid gap-5"><TextArea label="Who are your ideal customers?" name="idealCustomers" placeholder="Describe the people or businesses you most want to reach." value={profile.idealCustomers} onChange={updateField} required /><TextArea label="What products or services do you sell?" name="productsAndServices" placeholder="List your main offers, services, or product categories." value={profile.productsAndServices} onChange={updateField} required /><TextArea label="What geographic areas do you serve?" name="serviceArea" placeholder="For example: Austin metro, Central Texas, or nationwide." value={profile.serviceArea} onChange={updateField} required /><TextArea label="What makes your business different?" name="differentiator" placeholder="Describe the experience, expertise, results, or approach that sets you apart." value={profile.differentiator} onChange={updateField} required /></div></StepContent>}
           {step === 2 && <StepContent icon={<UsersRound size={22} />} title="Your marketing channels" description="Choose the channels you actively use today. You can connect them later, one at a time."><fieldset><legend className="mb-4 text-sm font-medium text-slate-200">Where does your business show up?</legend><div className="grid gap-3 sm:grid-cols-2">{channels.map((channel) => <label key={channel} className={`flex cursor-pointer items-center gap-3 border px-4 py-3 text-sm transition-colors ${selectedChannels.includes(channel) ? "border-cyan-400 bg-cyan-400/10 text-white" : "border-slate-700 bg-[#0a0f1e] text-slate-300 hover:border-slate-500"}`}><input type="checkbox" checked={selectedChannels.includes(channel)} onChange={() => toggleChannel(channel)} className="size-4 accent-cyan-400" />{channel}</label>)}</div></fieldset><div className="mt-5 flex items-start gap-3 border-l-2 border-cyan-400 bg-cyan-400/5 p-4 text-sm leading-6 text-slate-300"><MapPinned size={18} className="mt-1 shrink-0 text-cyan-300" />Not every business needs every channel. MarketGrowthAI will prioritize the sources that make sense for your customers and goals.</div></StepContent>}
-          <div className="mt-8 flex items-center justify-between border-t border-slate-800 pt-5">{step > 0 ? <button type="button" onClick={() => setStep((current) => current - 1)} className="text-sm font-semibold text-slate-400 hover:text-white">Back</button> : <span />}{step === steps.length - 1 ? <button disabled={isSaving} className="flex items-center gap-2 bg-cyan-400 px-4 py-2.5 text-sm font-bold text-slate-950 hover:bg-cyan-300">{isSaving ? "Preparing connections..." : "Continue to connections"}<Check size={17} /></button> : <button className="flex items-center gap-2 bg-cyan-400 px-4 py-2.5 text-sm font-bold text-slate-950 hover:bg-cyan-300">Continue<ArrowRight size={17} /></button>}</div>
+          {error && <p role="alert" className="mt-4 text-sm text-red-300">{error}</p>}
+          <div className="mt-8 flex items-center justify-between border-t border-slate-800 pt-5">{step > 0 ? <button type="button" onClick={() => setStep((current) => current - 1)} className="text-sm font-semibold text-slate-400 hover:text-white">Back</button> : <span />}{step === steps.length - 1 ? <button disabled={isSaving || isLoadingProfile} className="flex items-center gap-2 bg-cyan-400 px-4 py-2.5 text-sm font-bold text-slate-950 hover:bg-cyan-300 disabled:cursor-not-allowed disabled:opacity-60">{isSaving ? "Preparing connections..." : "Continue to connections"}<Check size={17} /></button> : <button disabled={isLoadingProfile} className="flex items-center gap-2 bg-cyan-400 px-4 py-2.5 text-sm font-bold text-slate-950 hover:bg-cyan-300 disabled:cursor-not-allowed disabled:opacity-60">Continue<ArrowRight size={17} /></button>}</div>
         </form>
       </div>
     </div>
