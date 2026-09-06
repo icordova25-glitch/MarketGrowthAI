@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { requireAuthenticatedRequest } from "@/lib/server-auth";
 
+export const runtime = "nodejs";
+
 const priceIds = {
   starter: process.env.STRIPE_PRICE_STARTER,
   growth: process.env.STRIPE_PRICE_GROWTH,

@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { isPlatformOwner, requireAuthenticatedRequest } from "@/lib/server-auth";
 
+export const runtime = "nodejs";
+
 export async function GET(request: Request) {
   const startedAt = Date.now();
   const auth = await requireAuthenticatedRequest(request);
