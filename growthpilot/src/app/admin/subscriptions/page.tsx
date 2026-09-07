@@ -156,7 +156,7 @@ export default function SubscriptionsAdminPage() {
                 <p className="mt-2 text-xl font-bold text-white">${plan.price}<span className="ml-1 text-sm font-medium text-slate-400">/mo</span></p>
                 <p className="mt-2 min-h-10 text-sm leading-5 text-slate-400">{plan.description}</p>
                 <p className="mt-3 text-xs text-slate-500">
-                  Limits: {plan.limits.scans} scans · {plan.limits.aiActions} AI actions · {plan.limits.workspaces} workspace{plan.limits.workspaces === 1 ? "" : "s"} · {plan.limits.seats} seat{plan.limits.seats === 1 ? "" : "s"}
+                  Limits: {plan.limits.website_scans} scans · {plan.limits.ai_requests} AI actions · {plan.limits.workspaces} workspace{plan.limits.workspaces === 1 ? "" : "s"} · {plan.limits.seats} seat{plan.limits.seats === 1 ? "" : "s"}
                 </p>
               </article>
             );
