@@ -131,6 +131,39 @@ export default function SubscriptionsAdminPage() {
         <MetricCard label="Billing follow-up" value={`${failedPayments + webhookExceptions}`} detail="Failed payment and webhook exception count" accent={failedPayments + webhookExceptions > 0 ? "text-amber-200" : "text-emerald-200"} icon={<BadgeDollarSign size={18} className="text-cyan-300" />} />
       </section>
 
+      <section className="mt-8 border border-slate-700 bg-slate-900 p-5">
+        <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
+          <div>
+            <h2 className="text-lg font-semibold text-white">Available plans</h2>
+            <p className="mt-1 text-sm text-slate-400">All subscription tiers in your Stripe catalog. Use Billing to switch plans.</p>
+          </div>
+          <a
+            href="/billing"
+            className="inline-flex items-center justify-center border border-cyan-400 px-3 py-2 text-sm font-semibold text-cyan-200 hover:bg-cyan-400 hover:text-slate-950"
+          >
+            Open Billing
+          </a>
+        </div>
+        <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          {billingPlans.map((plan) => {
+            const isCurrent = plan.id === activePlanId;
+            return (
+              <article key={plan.id} className={`border p-4 ${isCurrent ? "border-cyan-400 bg-cyan-400/10" : "border-slate-700 bg-slate-950/40"}`}>
+                <div className="flex items-center justify-between gap-3">
+                  <h3 className="text-base font-semibold text-white">{plan.name}</h3>
+                  {isCurrent && <span className="text-xs font-semibold uppercase tracking-[0.08em] text-cyan-200">Current</span>}
+                </div>
+                <p className="mt-2 text-xl font-bold text-white">${plan.price}<span className="ml-1 text-sm font-medium text-slate-400">/mo</span></p>
+                <p className="mt-2 min-h-10 text-sm leading-5 text-slate-400">{plan.description}</p>
+                <p className="mt-3 text-xs text-slate-500">
+                  Limits: {plan.limits.scans} scans · {plan.limits.aiActions} AI actions · {plan.limits.workspaces} workspace{plan.limits.workspaces === 1 ? "" : "s"} · {plan.limits.seats} seat{plan.limits.seats === 1 ? "" : "s"}
+                </p>
+              </article>
+            );
+          })}
+        </div>
+      </section>
+
       <section className="mt-8 grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
         <div className="border border-slate-700 bg-slate-900 p-5">
           <div className="flex items-center gap-3">
