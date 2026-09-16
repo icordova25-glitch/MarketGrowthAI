@@ -93,7 +93,7 @@ export default function BillingPage() {
       {error && <p role="alert" className="mb-4 border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-200">{error}</p>}
       {notice && <p className="mb-4 border-l-2 border-amber-300 bg-amber-300/5 p-3 text-sm text-amber-100">{notice}</p>}
 
-      <section className="mb-8 border border-cyan-500/30 bg-[#102a43] p-6">
+      <section className="mb-8 border border-cyan-500/30 bg-[#102a43] p-4 sm:p-6">
         <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
           <div>
             <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-cyan-300">
@@ -113,7 +113,7 @@ export default function BillingPage() {
               </p>
             )}
           </div>
-          <div className="flex items-center gap-2 border border-cyan-300/30 bg-cyan-400/10 px-3 py-2 text-sm font-semibold text-cyan-100">
+          <div className="flex items-center gap-2 self-start border border-cyan-300/30 bg-cyan-400/10 px-3 py-2 text-sm font-semibold text-cyan-100 md:self-auto">
             <ShieldCheck size={17} />
             Secure checkout via Stripe
           </div>
@@ -124,7 +124,7 @@ export default function BillingPage() {
         {billingPlans.map((item) => {
           const current = item.id === activePlanId;
           return (
-            <article key={item.id} className={`border p-5 ${current ? "border-cyan-400 bg-cyan-400/10" : "border-slate-700 bg-slate-900"}`}>
+            <article key={item.id} className={`border p-4 sm:p-5 ${current ? "border-cyan-400 bg-cyan-400/10" : "border-slate-700 bg-slate-900"}`}>
               <div className="flex items-center justify-between">
                 <h2 className="text-lg font-semibold text-white">{item.name}</h2>
                 {item.id === "growth" && <span className="text-xs font-semibold text-cyan-200">POPULAR</span>}
@@ -156,7 +156,7 @@ export default function BillingPage() {
       </section>
 
       <section className="grid gap-6 xl:grid-cols-[1fr_1fr]">
-        <div className="border border-slate-700 bg-slate-900 p-5">
+        <div className="border border-slate-700 bg-slate-900 p-4 sm:p-5">
           <h2 className="text-lg font-semibold text-white">Usage this month</h2>
           <p className="mt-1 text-sm text-slate-400">Usage resets with your billing period. Limits reflect the active plan.</p>
           <div className="mt-5 space-y-5">
@@ -167,7 +167,7 @@ export default function BillingPage() {
           </div>
         </div>
 
-        <div className="border border-slate-700 bg-slate-900 p-5">
+        <div className="border border-slate-700 bg-slate-900 p-4 sm:p-5">
           <div className="flex items-center gap-3">
             <UsersRound size={20} className="text-cyan-300" />
             <div>
@@ -184,8 +184,8 @@ export default function BillingPage() {
           </div>
           <div className="mt-4 space-y-2">
             {(state?.team.members ?? []).slice(0, 8).map((member) => (
-              <div key={member.id} className="flex justify-between border border-slate-700 bg-slate-950/40 px-3 py-2 text-sm">
-                <span className="text-slate-200">{member.email || member.name}</span>
+              <div key={member.id} className="flex items-center justify-between gap-3 border border-slate-700 bg-slate-950/40 px-3 py-2 text-sm">
+                <span className="min-w-0 truncate text-slate-200">{member.email || member.name}</span>
                 <span className="text-slate-500">{member.role}</span>
               </div>
             ))}

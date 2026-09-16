@@ -253,7 +253,7 @@ export default function AdminUsersPage() {
         </div>
       </section>
 
-      <section className="mt-8 border border-slate-700 bg-slate-900 p-5">
+      <section className="mt-8 border border-slate-700 bg-slate-900 p-4 sm:p-5">
         <h2 className="text-lg font-semibold text-white">Platform administrators</h2>
         <p className="mt-1 text-sm text-slate-400">Role changes and access revocations are persistent and audited.</p>
         {isLoading ? (
@@ -262,8 +262,57 @@ export default function AdminUsersPage() {
             Loading admin memberships...
           </div>
         ) : (
-          <div className="mt-5 overflow-x-auto">
-            <table className="w-full min-w-[740px] text-left text-sm">
+          <>
+            <div className="mt-5 space-y-3 md:hidden">
+              {activeUsers.map((user) => (
+                <article key={user.id} className="border border-slate-700 bg-slate-950/40 p-3">
+                  <p className="font-semibold text-white">{user.name}</p>
+                  <p className="mt-1 break-all text-xs text-slate-500">{user.email || "Email unavailable"}</p>
+                  <div className="mt-3 grid grid-cols-2 gap-3 text-xs">
+                    <div>
+                      <p className="uppercase tracking-[0.08em] text-slate-500">Status</p>
+                      <p className={`mt-1 font-semibold ${user.status === "Active" ? "text-emerald-300" : user.status === "Invited" ? "text-cyan-200" : "text-red-300"}`}>
+                        {user.status}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="uppercase tracking-[0.08em] text-slate-500">Last updated</p>
+                      <p className="mt-1 text-slate-300">{formatRelativeDate(user.lastActive)}</p>
+                    </div>
+                  </div>
+                  <div className="mt-3">
+                    {user.role === "Owner" ? (
+                      <p className="text-sm font-medium text-cyan-200">Owner</p>
+                    ) : (
+                      <select
+                        value={user.role}
+                        disabled={isSubmitting || user.status === "Revoked"}
+                        onChange={(event) => updateRole(user.id, event.target.value as Exclude<AdminRole, "Owner">)}
+                        className="w-full border border-slate-700 bg-slate-950/50 px-2 py-1.5 text-sm text-white outline-none focus:border-cyan-400"
+                      >
+                        {(Object.keys(roleToApiValue) as Exclude<AdminRole, "Owner">[]).map((item) => (
+                          <option key={item}>{item}</option>
+                        ))}
+                      </select>
+                    )}
+                  </div>
+                  {user.role !== "Owner" && user.status !== "Revoked" && (
+                    <button
+                      type="button"
+                      disabled={isSubmitting}
+                      onClick={() => revokeUser(user.id)}
+                      className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-red-300 hover:text-red-200 disabled:opacity-60"
+                    >
+                      <XCircle size={14} />
+                      Revoke
+                    </button>
+                  )}
+                </article>
+              ))}
+            </div>
+
+            <div className="mt-5 hidden overflow-x-auto md:block">
+              <table className="w-full min-w-[740px] text-left text-sm">
               <thead className="border-b border-slate-700 text-xs uppercase tracking-[0.08em] text-slate-500">
                 <tr>
                   <th className="pb-3 font-medium">Admin user</th>
@@ -321,7 +370,8 @@ export default function AdminUsersPage() {
                 ))}
               </tbody>
             </table>
-          </div>
+            </div>
+          </>
         )}
       </section>
 
@@ -333,7 +383,7 @@ export default function AdminUsersPage() {
             <p className="mt-1 text-sm text-slate-400">Persistent server-side admin events for invitation, role updates, and revocations.</p>
             <div className="mt-4 space-y-2">
               {auditEvents.slice(0, 8).map((event) => (
-                <p key={event.id} className="border-l-2 border-cyan-400 bg-slate-950/40 p-3 text-sm text-slate-300">
+                <p key={event.id} className="border-l-2 border-cyan-400 bg-slate-950/40 p-3 text-sm text-slate-300 break-words">
                   {mapActionLabel(event.action)} · {event.reason ?? "No reason provided"} · {formatRelativeDate(event.created_at)}
                 </p>
               ))}
