@@ -11,8 +11,9 @@ export default function AuthPage() {
   const [view, setView] = useState<View>("sign-up");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [confirmationEmail, setConfirmationEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { signUp, signIn, resetPassword, isDemoMode } = useAuth();
+  const { signUp, resendSignupConfirmation, signIn, resetPassword, isDemoMode } = useAuth();
   const router = useRouter();
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -51,10 +52,31 @@ export default function AuthPage() {
     if (result.error) {
       setError(result.error);
     } else if (result.confirmationRequired) {
+      setConfirmationEmail(email);
       setMessage("Check your inbox to confirm your email, then return here to sign in.");
       setView("sign-in");
     } else {
+      setConfirmationEmail("");
       router.replace(email.toLowerCase() === "owner@example.test" ? "/admin" : "/onboarding");
+    }
+  }
+
+  async function handleResendConfirmation() {
+    if (!confirmationEmail) return;
+    setError("");
+    setMessage("");
+    setIsSubmitting(true);
+    try {
+      const result = await resendSignupConfirmation(confirmationEmail);
+      if (result.error) {
+        setError(result.error);
+      } else {
+        setMessage(`A new verification email was requested for ${confirmationEmail}. Check your inbox and spam folder.`);
+      }
+    } catch {
+      setError("We couldn't request another verification email. Please try again.");
+    } finally {
+      setIsSubmitting(false);
     }
   }
 
@@ -65,7 +87,7 @@ export default function AuthPage() {
     <div className="grid min-h-screen bg-[#0a0f1e] lg:grid-cols-[1.05fr_0.95fr]">
       <section className="relative hidden overflow-hidden bg-[#102a43] p-12 lg:flex lg:flex-col lg:justify-between">
         <div className="absolute inset-0 opacity-30 [background-image:linear-gradient(rgba(56,189,248,0.12)_1px,transparent_1px),linear-gradient(90deg,rgba(56,189,248,0.12)_1px,transparent_1px)] [background-size:38px_38px]" />
-          <div className="relative flex items-center gap-3 text-white">
+        <div className="relative flex items-center gap-3 text-white">
           <div className="flex size-10 items-center justify-center rounded-lg bg-cyan-400 font-bold text-slate-950">M</div>
           <div><div className="text-lg font-bold">MarketGrowthAI</div><div className="text-xs text-cyan-100">AI Marketing Platform</div></div>
         </div>
@@ -88,9 +110,9 @@ export default function AuthPage() {
             <p className="mt-2 text-sm leading-6 text-slate-400">{isSignUp ? "Start with your account. Your business setup comes next." : isReset ? "We will send a secure reset link to your email." : "Sign in to continue building your growth plan."}</p>
           </div>
 
-          {isDemoMode && <div className="mb-5 flex gap-3 border border-amber-500/30 bg-amber-500/10 p-3 text-xs leading-5 text-amber-100"><Sparkles size={16} className="mt-0.5 shrink-0" />Demo mode is active. Add Supabase variables to enable secure account persistence.</div>}
+          {isDemoMode && <div className="mb-5 flex gap-3 border border-amber-500/30 bg-amber-500/10 p-3 text-xs leading-5 text-amber-100"><Sparkles size={16} className="mt-0.5 shrink-0" />Demo mode is active. Account and verification emails are not sent until Supabase is configured.</div>}
           {error && <div role="alert" className="mb-5 border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-200">{error}</div>}
-          {message && <div className="mb-5 flex gap-3 border border-emerald-500/30 bg-emerald-500/10 p-3 text-sm text-emerald-100"><CheckCircle2 size={18} className="shrink-0" />{message}</div>}
+          {message && <div role="status" aria-live="polite" className="mb-5 flex gap-3 border border-emerald-500/30 bg-emerald-500/10 p-3 text-sm text-emerald-100"><CheckCircle2 size={18} className="shrink-0" /><div>{message}{confirmationEmail && !isSignUp && !isReset && <div className="mt-3"><button type="button" disabled={isSubmitting} onClick={handleResendConfirmation} className="font-semibold text-cyan-200 underline underline-offset-2 hover:text-white disabled:opacity-60">{isSubmitting ? "Sending..." : "Resend verification email"}</button></div>}</div></div>}
 
           <form onSubmit={handleSubmit} className="space-y-4">
             {isSignUp && <div className="grid grid-cols-2 gap-4"><Field label="First name" name="firstName" autoComplete="given-name" required /><Field label="Last name" name="lastName" autoComplete="family-name" required /></div>}
@@ -102,7 +124,7 @@ export default function AuthPage() {
           </form>
 
           <div className="mt-6 text-center text-sm text-slate-400">
-            {isSignUp ? <>Already have an account? <button type="button" onClick={() => { setView("sign-in"); setError(""); setMessage(""); }} className="font-semibold text-cyan-300 hover:text-cyan-200">Log in</button></> : isReset ? <button type="button" onClick={() => { setView("sign-in"); setError(""); setMessage(""); }} className="font-semibold text-cyan-300 hover:text-cyan-200">Back to log in</button> : <><button type="button" onClick={() => { setView("reset"); setError(""); setMessage(""); }} className="mr-4 font-semibold text-cyan-300 hover:text-cyan-200">Forgot password?</button><button type="button" onClick={() => { setView("sign-up"); setError(""); setMessage(""); }} className="font-semibold text-cyan-300 hover:text-cyan-200">Create an account</button></>}
+            {isSignUp ? <>Already have an account? <button type="button" onClick={() => { setView("sign-in"); setError(""); setMessage(""); }} className="font-semibold text-cyan-300 hover:text-cyan-200">Log in</button></> : isReset ? <button type="button" onClick={() => { setView("sign-in"); setError(""); setMessage(""); }} className="font-semibold text-cyan-300 hover:text-cyan-200">Back to log in</button> : <><button type="button" onClick={() => { setView("reset"); setError(""); setMessage(""); }} className="mr-4 font-semibold text-cyan-300 hover:text-cyan-200">Forgot password?</button><button type="button" onClick={() => { setView("sign-up"); setError(""); setMessage(""); setConfirmationEmail(""); }} className="font-semibold text-cyan-300 hover:text-cyan-200">Create an account</button></>}
           </div>
         </div>
       </section>
