@@ -16,6 +16,7 @@ type AuthContextValue = {
   isLoading: boolean;
   isDemoMode: boolean;
   signUp: (values: SignUpValues) => Promise<AuthResult>;
+  resendSignupConfirmation: (email: string) => Promise<AuthResult>;
   signIn: (email: string, password: string) => Promise<AuthResult>;
   resetPassword: (email: string) => Promise<AuthResult>;
   signOut: () => Promise<void>;
@@ -109,6 +110,18 @@ export function AuthProvider({ children }: Readonly<{ children: React.ReactNode 
 
       if (error) return { error: error.message };
       return { confirmationRequired: !data.session };
+    },
+    async resendSignupConfirmation(email) {
+      if (!supabase) {
+        return { error: "Verification emails are unavailable in demo mode. Configure Supabase Auth and SMTP to send them." };
+      }
+
+      const { error } = await supabase.auth.resend({
+        type: "signup",
+        email,
+        options: { emailRedirectTo: `${window.location.origin}/onboarding` },
+      });
+      return error ? { error: error.message } : {};
     },
     async signIn(email, password) {
       if (!supabase) {

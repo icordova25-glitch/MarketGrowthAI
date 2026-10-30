@@ -23,7 +23,14 @@ To enable Supabase authentication, copy `.env.example` to `.env.local` and add t
 cp .env.example .env.local
 ```
 
-Without those variables, the app runs in clearly labeled demo mode using browser-only session and onboarding data. Demo mode is intended for product walkthroughs, not production use.
+Without those variables, the app runs in clearly labeled demo mode using browser-only session and onboarding data. Demo mode is intended for product walkthroughs, not production use, and does not send account verification emails.
+
+For production signup verification:
+
+1. Enable email confirmations in Supabase Authentication settings.
+2. Configure a custom SMTP provider in Supabase Auth; the built-in email service is rate-limited and intended for testing.
+3. Set the Supabase Site URL to the deployed app URL and allow the deployed URL plus `/onboarding` in the redirect URL allowlist.
+4. Check the provider's delivery logs and spam folders if a message is not received. The sign-in screen also offers a resend action after signup.
 
 ## Database Architecture
 
@@ -35,7 +42,7 @@ Provider credentials and refresh tokens must remain in server-side secrets or an
 
 ## Billing
 
-The Billing & Plans workspace provides Starter, Growth, Pro, and Agency product tiers, usage-limit display, and agency seat management. The Checkout route at `/api/stripe/checkout` creates a Stripe subscription Checkout Session when `STRIPE_SECRET_KEY` and all plan-specific `STRIPE_PRICE_*` values are configured. In the local demo without Stripe credentials, plan changes are explicitly saved only to browser storage.
+The Billing & Plans workspace provides Starter, Growth, Pro, and Agency product tiers, usage-limit display, and agency seat management. The Checkout route at `/api/stripe/checkout` creates a Stripe subscription Checkout Session when `STRIPE_SECRET_KEY` and all plan-specific `STRIPE_PRICE_*` values are configured. In the local demo without Stripe credentials, plan changes are explicitly saved only to browser storage. Plan and agency demo state is scoped to the signed-in account in that browser.
 
 Before production release, add a signed Stripe webhook that updates the `subscriptions` and `usage` tables after checkout, renewal, cancellation, and invoice-payment events. Do not trust browser plan state for entitlement decisions.
 
@@ -62,4 +69,4 @@ npm run build
 
 ## Deployment
 
-Deploy the app to Vercel and configure the same `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` variables in the Vercel project settings.
+Deploy the app to Vercel and configure the same `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` variables in the Vercel project settings. Configure `STRIPE_SECRET_KEY` and the four `STRIPE_PRICE_STARTER`, `STRIPE_PRICE_GROWTH`, `STRIPE_PRICE_PRO`, and `STRIPE_PRICE_AGENCY` values to enable checkout for all tiers.
