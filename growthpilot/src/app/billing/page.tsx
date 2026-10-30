@@ -37,33 +37,38 @@ export default function BillingPage() {
   const usage = usageByPlan[planId];
 
   useEffect(() => {
-    setPlanId("growth");
-    setMembers([]);
-    const storedPlan = window.localStorage.getItem(planStorageKey) as PlanId | null;
-    const storedMembers = window.localStorage.getItem(membersStorageKey);
-    if (storedPlan && plans.some((item) => item.id === storedPlan)) setPlanId(storedPlan);
-    if (storedMembers) setMembers(JSON.parse(storedMembers) as Member[]);
+    const timer = window.setTimeout(() => {
+      setPlanId("growth");
+      setMembers([]);
+      const storedPlan = window.localStorage.getItem(planStorageKey) as PlanId | null;
+      const storedMembers = window.localStorage.getItem(membersStorageKey);
+      if (storedPlan && plans.some((item) => item.id === storedPlan)) setPlanId(storedPlan);
+      if (storedMembers) setMembers(JSON.parse(storedMembers) as Member[]);
 
-    const url = new URL(window.location.href);
-    const checkout = url.searchParams.get("checkout");
-    if (checkout === "success") {
-      const pendingPlan = window.localStorage.getItem(pendingPlanStorageKey) as PlanId | null;
-      if (pendingPlan && plans.some((item) => item.id === pendingPlan)) {
-        setPlanId(pendingPlan);
-        window.localStorage.setItem(planStorageKey, pendingPlan);
-        setNotice(`Checkout completed. ${plans.find((item) => item.id === pendingPlan)?.name} is now selected for this account.`);
-      } else {
-        setNotice("Checkout completed, but the selected plan could not be restored. Please choose your plan again.");
+      const url = new URL(window.location.href);
+      const checkout = url.searchParams.get("checkout");
+      if (checkout === "success") {
+        const pendingPlan = window.localStorage.getItem(pendingPlanStorageKey) as PlanId | null;
+        if (pendingPlan && plans.some((item) => item.id === pendingPlan)) {
+          setPlanId(pendingPlan);
+          window.localStorage.setItem(planStorageKey, pendingPlan);
+          setNotice(`Checkout completed. ${plans.find((item) => item.id === pendingPlan)?.name} is now selected for this account.`);
+        } else {
+          setNotice("Checkout completed, but the selected plan could not be restored. Please choose your plan again.");
+        }
+        window.localStorage.removeItem(pendingPlanStorageKey);
+      } else if (checkout === "cancelled") {
+        window.localStorage.removeItem(pendingPlanStorageKey);
+        setNotice("Checkout was cancelled. Your existing plan selection was left unchanged.");
       }
-      window.localStorage.removeItem(pendingPlanStorageKey);
-    } else if (checkout === "cancelled") {
-      window.localStorage.removeItem(pendingPlanStorageKey);
-      setNotice("Checkout was cancelled. Your existing plan selection was left unchanged.");
-    }
-    if (checkout) {
-      url.searchParams.delete("checkout");
-      window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
-    }
+
+      if (checkout) {
+        url.searchParams.delete("checkout");
+        window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
+      }
+    }, 0);
+
+    return () => window.clearTimeout(timer);
   }, [accountId, membersStorageKey, pendingPlanStorageKey, planStorageKey]);
 
   async function choosePlan(nextPlan: PlanId) {
